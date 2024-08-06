@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 api_token = st.secrets['API_KEY']
 
 # Load the Excel file
-excel_file_path = 'BBands_ETFs_2024-08-05_v2.xlsx'
+excel_file_path = 'BBands_ETFs_2024-08-06.xlsx'
 sheets_dict = pd.read_excel(excel_file_path, sheet_name=None)
 
 # Sidebar for sector selection
