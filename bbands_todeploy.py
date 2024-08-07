@@ -8,15 +8,29 @@ from concurrent.futures import ThreadPoolExecutor
 #api key below
 api_token = st.secrets['API_KEY']
 
-# Load the Excel file
-excel_file_path = 'BBands_ETFs_2024-08-07.xlsx'
-sheets_dict = pd.read_excel(excel_file_path, sheet_name=None)
+# Load the BBands Excel file
+bbands_excel_file_path = 'BBands_ETFs_2024-08-07.xlsx'
+bbands_sheets_dict = pd.read_excel(bbands_excel_file_path, sheet_name=None)
 
-# Sidebar for sector selection
-st.sidebar.title("Select Sector")
-selected_sector = st.sidebar.radio("Sectors", list(sheets_dict.keys()))
+# Load the ROC/STDDEV Excel file
+roc_stddev_excel_file_path = 'ROCSTDEV_ETF_Analysis_2024-08-07_sheets.xlsx'
+roc_stddev_sheets_dict = pd.read_excel(roc_stddev_excel_file_path, sheet_name=None)
 
-# Color mapping for different bands
+# Sidebar for analysis selection
+st.sidebar.title("Select Analysis Type")
+selected_analysis = st.sidebar.radio("Analysis Type", ["BBands analysis", "ROC/STDDEV analysis"])
+
+# Sidebar for sector/subsector selection based on analysis type
+if selected_analysis == "BBands analysis":
+    st.sidebar.title("Select Sector")
+    selected_sector = st.sidebar.radio("Sectors", list(bbands_sheets_dict.keys()))
+    df = bbands_sheets_dict[selected_sector]
+else:
+    st.sidebar.title("Select Subsector")
+    selected_subsector = st.sidebar.radio("Subsectors", list(roc_stddev_sheets_dict.keys()))
+    df = roc_stddev_sheets_dict[selected_subsector]
+
+# Color mapping for different bands (for BBands analysis)
 color_map = {
     'LBand 1STD': 'background-color: lightcoral',  # light red
     'LBand 2STD': 'background-color: red',  # stronger red
@@ -37,7 +51,7 @@ def prioritize_bands(df):
         'Mid Zone': 5
     }
     df['Priority'] = df[['Crossing Daily Band', 'Crossing Weekly Band', 'Crossing Monthly Band']].apply(
-        lambda x: min(band_priority[x[0]], band_priority[x[1]], band_priority[x[2]]), axis=1
+        lambda x: min(band_priority.get(x[0], 5), band_priority.get(x[1], 5), band_priority.get(x[2], 5)), axis=1
     )
     return df.sort_values('Priority').drop(columns='Priority')
 
@@ -133,34 +147,100 @@ def analyze_symbol(symbol, api_token):
     return symbol, current_price, today_percentage, mtd_percentage, qtd_percentage, ytd_percentage, five_day_percentage
 
 # Main code
-df = sheets_dict[selected_sector]
-sorted_df = prioritize_bands(df)
-highlighted_df = sorted_df.style.applymap(highlight_cells, subset=['Crossing Daily Band', 'Crossing Weekly Band', 'Crossing Monthly Band'])
+if selected_analysis == "BBands analysis":
+    sorted_df = prioritize_bands(df)
+    highlighted_df = sorted_df.style.applymap(highlight_cells, subset=['Crossing Daily Band', 'Crossing Weekly Band', 'Crossing Monthly Band'])
 
-st.title(f"{selected_sector} - Bollinger Bands Analysis")
-st.dataframe(highlighted_df, height=500, width=1000)
+    st.title(f"{selected_sector} - Bollinger Bands Analysis")
+    st.dataframe(highlighted_df, height=500, width=1000)
 
-# Display chart and data for selected symbol
-selected_ticker = st.selectbox("Select Ticker to View Chart", sorted_df['Symbol'])
+    # Display chart and data for selected symbol
+    selected_ticker = st.selectbox("Select Ticker to View Chart", sorted_df['Symbol'])
 
-# Generate and display the TradingView chart
-col1, col2 = st.columns([3, 1])
+    # Generate and display the TradingView chart
+    col1, col2 = st.columns([3, 1])
 
-with col1:
-    chart_html = generate_tradingview_embed(selected_ticker)
-    st.components.v1.html(chart_html, height=600)
+    with col1:
+        chart_html = generate_tradingview_embed(selected_ticker)
+        st.components.v1.html(chart_html, height=600)
 
-# Perform and display the analysis for the selected ticker
-symbol, current_price, today_percentage, mtd_percentage, qtd_percentage, ytd_percentage, five_day_percentage = analyze_symbol(selected_ticker, api_token)
+    # Perform and display the analysis for the selected ticker
+    symbol, current_price, today_percentage, mtd_percentage, qtd_percentage, ytd_percentage, five_day_percentage = analyze_symbol(selected_ticker, api_token)
 
-if current_price is not None:
-    with col2:
-        st.subheader(f"{selected_ticker}")
-        st.write(f"**Current Price:** {current_price}")
-        st.write(f"**Today:** {today_percentage}%")
-        st.write(f"**5-Day:** {five_day_percentage}%")
-        st.write(f"**MTD:** {mtd_percentage}%")
-        st.write(f"**QTD:** {qtd_percentage}%")
-        st.write(f"**YTD:** {ytd_percentage}%")
+    if current_price is not None:
+        with col2:
+            st.subheader(f"{selected_ticker}")
+            st.write(f"**Current Price:** {current_price}")
+            st.write(f"**Today:** {today_percentage}%")
+            st.write(f"**5-Day:** {five_day_percentage}%")
+            st.write(f"**MTD:** {mtd_percentage}%")
+            st.write(f"**QTD:** {qtd_percentage}%")
+            st.write(f"**YTD:** {ytd_percentage}%")
+    else:
+        st.write(f"Could not fetch data for {selected_ticker}. Please try again later.")
+
 else:
-    st.write(f"Could not fetch data for {selected_ticker}. Please try again later.")
+    st.title(f"{selected_subsector} - ROC/STDDEV Analysis")
+    st.dataframe(df, height=500, width=1000)
+
+    # Display chart and data for selected symbol
+    selected_ticker = st.selectbox("Select Ticker to View Chart", df['Symbol'])
+
+    # Generate and display the TradingView chart
+    col1, col2 = st.columns([3, 1])
+
+    with col1:
+        chart_html = generate_tradingview_embed(selected_ticker)
+        st.components.v1.html(chart_html, height=600)
+
+    # Perform and display the analysis for the selected ticker
+    symbol, current_price, today_percentage, mtd_percentage, qtd_percentage, ytd_percentage, five_day_percentage = analyze_symbol(selected_ticker, api_token)
+
+    if current_price is not None:
+        with col2:
+            st.subheader(f"{selected_ticker}")
+            st.write(f"**Current Price:** {current_price}")
+            st.write(f"**Today:** {today_percentage}%")
+            st.write(f"**5-Day:** {five_day_percentage}%")
+            st.write(f"**MTD:** {mtd_percentage}%")
+            st.write(f"**QTD:** {qtd_percentage}%")
+            st.write(f"**YTD:** {ytd_percentage}%")
+    else:
+        st.write(f"Could not fetch data for {selected_ticker}. Please try again later.")
+
+    # Create the scatter plot for ROC/STDDEV vs RSI
+    if 'ROC/STDDEV' in df.columns and 'RSI' in df.columns:
+        scatter = alt.Chart(df).mark_circle(size=60).encode(
+            x=alt.X('ROC/STDDEV', scale=alt.Scale(domain=[15, 30]), title='ROC/STDDEV'),
+            y=alt.Y('RSI', scale=alt.Scale(domain=[80, 105]), title='RSI'),
+            color=alt.Color('Symbol', legend=None),
+            tooltip=['Symbol', 'ROC/STDDEV', 'RSI']
+        ).interactive()
+
+        # Add text labels to the points
+        text = scatter.mark_text(
+            align='left',
+            baseline='middle',
+            dx=7,
+            fontSize=10
+        ).encode(
+            text='Symbol'
+        )
+
+        # Combine the scatter plot and text
+        chart = scatter + text
+
+        chart = chart.properties(
+            title='ROC/STDDEV vs RSI Scatter Plot'
+        ).configure_axis(
+            grid=True
+        ).configure_title(
+            fontSize=20
+        ).configure_legend(
+            labelFontSize=12,
+            titleFontSize=14
+        )
+
+        st.altair_chart(chart, use_container_width=True)
+    else:
+        st.write("The dataframe does not contain the required columns for the scatter plot.")
