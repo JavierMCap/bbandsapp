@@ -4,6 +4,7 @@ import requests
 from datetime import datetime, timedelta
 from pandas.tseries.offsets import BDay
 from concurrent.futures import ThreadPoolExecutor
+import altair as alt
 
 #api key below
 api_token = st.secrets['API_KEY']
