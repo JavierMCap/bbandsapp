@@ -211,13 +211,20 @@ else:
 
     # Create the scatter plot for ROC/STDDEV vs RSI
     if 'ROC/STDDEV' in df.columns and 'RSI' in df.columns:
+
+        # Calculate min and max for x and y axes
+        x_min, x_max = df['ROC/STDDEV'].min(), df['ROC/STDDEV'].max()
+        y_min, y_max = df['RSI'].min(), df['RSI'].max()
+        
+        
+       # Create scatter plot with dynamic domain
         scatter = alt.Chart(df).mark_circle(size=60).encode(
-            x=alt.X('ROC/STDDEV', scale=alt.Scale(domain=[15, 30]), title='ROC/STDDEV'),
-            y=alt.Y('RSI', scale=alt.Scale(domain=[80, 105]), title='RSI'),
+            x=alt.X('ROC/STDDEV', scale=alt.Scale(domain=[x_min, x_max]), title='ROC/STDDEV'),
+            y=alt.Y('RSI', scale=alt.Scale(domain=[y_min, y_max]), title='RSI'),
             color=alt.Color('Symbol', legend=None),
             tooltip=['Symbol', 'ROC/STDDEV', 'RSI']
         ).interactive()
-
+        
         # Add text labels to the points
         text = scatter.mark_text(
             align='left',
@@ -227,10 +234,10 @@ else:
         ).encode(
             text='Symbol'
         )
-
+        
         # Combine the scatter plot and text
         chart = scatter + text
-
+        
         chart = chart.properties(
             title='ROC/STDDEV vs RSI Scatter Plot'
         ).configure_axis(
@@ -241,7 +248,7 @@ else:
             labelFontSize=12,
             titleFontSize=14
         )
-
+        
         st.altair_chart(chart, use_container_width=True)
     else:
         st.write("The dataframe does not contain the required columns for the scatter plot.")
