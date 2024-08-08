@@ -10,7 +10,7 @@ import altair as alt
 api_token = st.secrets['API_KEY']
 
 # Load the BBands Excel file
-bbands_excel_file_path = 'BBands_ETFs_2024-08-07.xlsx'
+bbands_excel_file_path = 'BBands_ETFs_2024-08-08.xlsx'
 bbands_sheets_dict = pd.read_excel(bbands_excel_file_path, sheet_name=None)
 
 # Load the ROC/STDDEV Excel file
