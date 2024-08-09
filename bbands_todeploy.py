@@ -10,11 +10,11 @@ import altair as alt
 api_token = st.secrets['API_KEY']
 
 # Load the BBands Excel file
-bbands_excel_file_path = 'BBands_ETFs_2024-08-08.xlsx'
+bbands_excel_file_path = 'BBands_ETFs_2024-08-09.xlsx'
 bbands_sheets_dict = pd.read_excel(bbands_excel_file_path, sheet_name=None)
 
 # Load the ROC/STDDEV Excel file
-roc_stddev_excel_file_path = 'ROCSTDEV_ETF_Analysis_2024-08-08_sheets.xlsx'
+roc_stddev_excel_file_path = 'ROCSTDEV_ETF_Analysis_2024-08-09_sheets.xlsx'
 roc_stddev_sheets_dict = pd.read_excel(roc_stddev_excel_file_path, sheet_name=None)
 
 # Sidebar for analysis selection
